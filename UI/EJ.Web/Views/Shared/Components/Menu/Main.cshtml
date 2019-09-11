@@ -1,0 +1,18 @@
+﻿@model EJ.Models.UI.MenuModel
+
+@*<nav class="navbar navbar-default" id="mainMenu">
+    <div class="navbar-collapse collapse" id="navbar-main">*@
+
+        @if (Model.MenuItems.Count > 0)
+        {
+            <li class="nav navbar-nav">
+
+                @foreach (var menuItem in Model.MenuItems)
+                {
+                    @await Component.InvokeAsync("MenuItem", Tuple.Create(menuItem, true))
+                }
+            </li>
+        }
+
+    @*</div>
+</nav>*@

@@ -1,0 +1,28 @@
+﻿@model EJ.Models.UI.LoginUI
+@{
+    ViewData["Title"] = "Вход в систему";
+}
+<h2>Вход на сайт</h2>
+
+<form asp-action="Login" asp-controller="Account" asp-anti-forgery="true">
+    <div class="validation" asp-validation-summary="ModelOnly"></div>
+    <div class="login">
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text w-100" id="basic-addon1" asp-for="Email">Введите Email</span>
+            </div>
+            <input class="form-control" type="email" asp-for="Email" aria-label="Email" aria-describedby="basic-addon1"/>
+            <span asp-validation-for="Email" />
+        </div>
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text w-100" id="basic-addon2" asp-for="Password">Введите пароль</span>
+            </div>
+            <input class="form-control" type="password" asp-for="Password" aria-label="Password" aria-describedby="basic-addon2"/>
+            <span asp-validation-for="Password" />
+        </div>
+        <div class="input-group mb-3">
+            <input type="submit" value="Войти" class="btn btn-dark btn-submit" />
+        </div>
+    </div>
+</form>

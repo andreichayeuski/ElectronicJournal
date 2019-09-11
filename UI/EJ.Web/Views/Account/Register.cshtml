@@ -1,0 +1,77 @@
+﻿@using EJ.Models.UI
+@model EJ.Models.UI.RegisterUI
+@{
+    ViewData["Title"] = "Регистрация";
+}
+<h2>Регистрация</h2>
+
+<form asp-action="Register" asp-controller="Account" asp-anti-forgery="true">
+    <div class="validation" asp-validation-summary="ModelOnly"></div>
+    <div>
+        <div>
+            <label asp-for="Email">Email</label><br />
+            @Html.TextBoxFor(x => x.Email, new { @class = "text-lowercase", type = "email" })
+            @Html.ValidationMessageFor(x => x.Email)
+        </div>
+        <div>
+            <label asp-for="Password">Пароль</label><br />
+            @Html.TextBoxFor(x => x.Password, new { type = "password" })
+            @Html.ValidationMessageFor(x => x.Password)
+        </div>
+        <div>
+            <label asp-for="ConfirmPassword">Повторите пароль</label><br />
+            @Html.TextBoxFor(x => x.ConfirmPassword, new { type = "password" })
+            @Html.ValidationMessageFor(x => x.ConfirmPassword)
+        </div>
+        <div>
+            <label asp-for="SName">Фамилия</label><br />
+            @Html.TextBoxFor(x => x.SName)
+            @Html.ValidationMessageFor(x => x.SName)
+        </div>
+        <div>
+            <label asp-for="FName">Имя</label><br />
+            @Html.TextBoxFor(x => x.FName)
+            @Html.ValidationMessageFor(x => x.FName)
+        </div>
+        <div>
+            <label asp-for="MName">Отчество</label><br />
+            @Html.TextBoxFor(x => x.MName)
+            @Html.ValidationMessageFor(x => x.MName)
+        </div>
+        <div>
+            <label asp-for="Birthday">Дата рождения</label><br />
+            <input name="Birthday" type="date" value="@DateTime.Now.Date.ToString("yyyy-MM-dd")" />
+        </div>
+        <div>
+            <label asp-for="PersonalNumber">Персональный номер (номер студенческого/пропуска)</label><br />
+            @Html.TextBoxFor(x => x.PersonalNumber)
+            @Html.ValidationMessageFor(x => x.PersonalNumber)
+        </div>
+        <div>
+            <label asp-for="StartDate">Дата начала обучения</label><br />
+            <input name="StartDate" type="date" value="@DateTime.Now.Date.ToString("yyyy-MM-dd")" />
+            <span asp-validation-for="StartDate" />
+        </div>
+        <div>
+            <label asp-for="Sex">Пол</label><br />
+            <p><input name="Sex" type="radio" value="false"> Женский </p>
+            <p><input name="Sex" type="radio" value="true"> Мужской</p>
+        </div>
+        <div>
+            <label asp-for="GroupId">Группа</label><br />
+            <select name="GroupId">
+                @if (((IEnumerable<GroupUi>) ViewBag.Groups).Count() != 0)
+                {
+                    foreach (var item in (IEnumerable<GroupUi>) ViewBag.Groups)
+                    {
+                        <option value="@(item.Id)">@(item.Number + "/" + (item.HalfGroup ? "2" : "1"))</option>
+                    }
+                }
+            </select>
+        </div>
+        <br />
+        <div>
+            <input type="submit" value="Регистрация" />
+        </div>
+    </div>
+</form>

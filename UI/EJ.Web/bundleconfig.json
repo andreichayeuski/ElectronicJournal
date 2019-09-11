@@ -1,0 +1,16 @@
+[
+  {
+    "outputFileName": "wwwroot/css/site.css",
+    "inputFiles": [
+      "wwwroot/app/css/alertify.css",
+      "wwwroot/app/css/themes/bootstrap.css",
+      "wwwroot/app/css/site.css"
+    ]
+  },
+  {
+    "outputFileName": "wwwroot/css/ej.app.css",
+    "inputFiles": [
+      "wwwroot/app/css/ej.app.css"
+    ]
+  }  
+]

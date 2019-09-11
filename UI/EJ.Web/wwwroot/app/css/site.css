@@ -1,0 +1,160 @@
+﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand {
+    white-space: normal;
+    text-align: center;
+    word-break: break-all;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.border-top {
+    border-top: 1px solid #e5e5e5;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow {
+    box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy {
+    font-size: 1rem;
+    line-height: inherit;
+}
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    /* Set the fixed height of the footer here */
+    height: 60px;
+    line-height: 60px; /* Vertically center the text there */
+}
+
+.group {
+    border: solid 2px;
+}
+
+button {
+    float: right;
+}
+
+
+.header {
+    font-size: large;
+    margin: 7px 0px;
+    font-weight: 700;
+}
+
+.label {
+    text-align: center;
+    width: 180px;
+}
+
+.input {
+    width: 100px;
+}
+
+.form-control {
+    width: 300px;
+}
+
+.edit-div .form-row {
+    margin: 3px 3px 3px 3px;
+}
+
+.edit-div .form-control {
+    width: 360px;
+}
+
+.edit-div {
+    text-align: center;
+}
+
+button {
+    vertical-align:central;
+    margin: 3px 3px 3px 3px;
+}
+
+.title {
+    height: 45px;
+}
+
+.user {
+    border: solid 2px;
+}
+
+label {
+    margin: 7px 0px;
+}
+
+.col-form-label {
+    margin: 0px;
+}
+
+.save {
+    padding: 6px 12px;
+    margin: 0px 3px;
+}
+
+.radiobtn {
+    height: 26px;
+    margin: 7px;
+}
+
+.bold{
+    font-weight:500;
+}
+
+.input-group-prepend {
+    width: 40%;
+}
+
+.input-validation-error {
+    border-color: red;
+}
+
+.field-validation-error {
+    color: red;
+}
+
+@media screen and (min-device-width: 1000px) {
+    div.login {
+        width: 40%;
+    }
+}
+
+.nav-link-sub{
+    margin: 5px;
+}
+
+.dropdown-menu {
+    padding-left: 5px;
+}

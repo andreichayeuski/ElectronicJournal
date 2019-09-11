@@ -1,0 +1,72 @@
+﻿@using EJ.Models.UI
+@using EJ.Models.Enums
+@model IEnumerable<LessonUi>
+
+@{
+    Layout = null;
+}
+
+@if (Model == null || Model.Count() == 0)
+{
+    <tr>
+        <td><span class="bold">Нет занятий</span></td>
+    </tr>
+}
+else
+{
+    if (Model.First().StartDate != null)
+    {
+        <tr>
+            <td colspan="3">Дата начала периода</td>
+            <td>@Model.First().StartDate?.ToShortDateString()</td>
+            <td colspan="2">Дата конца периода</td>5
+            <td>@Model.First().EndDate?.ToShortDateString()</td>
+        </tr>
+    }
+    <tr>
+        <td><span class="bold">Пара </span></td>
+        <td><span class="bold">Время </span></td>
+        <td><span class="bold">Учебная неделя</span></td>
+        <td><span class="bold">Тип занятия </span></td>
+        <td><span class="bold">Предмет</span></td>
+        <td><span class="bold">Аудитория</span></td>
+        <td><span class="bold">Присутствие</span></td>
+        @if (IsCurrentUserInRole(RolesEnum.Староста) || IsCurrentUserInRole(RolesEnum.ЗаместительCтаросты))
+        {
+            <td><span class="bold">Пропуски</span></td>
+        }
+    </tr>
+    foreach (LessonUi lesson in Model)
+    {
+        <tr>
+            <td><span>@lesson.Number </span></td>
+            <td><span>@(lesson.StartTime.ToString(@"hh\:mm")) - @(lesson.EndTime.ToString(@"hh\:mm"))</span></td>
+            <td><span>@lesson.WeekNumber </span></td>
+            <td><span>@lesson.ClassType </span></td>
+            <td><span>@lesson.Subject </span></td>
+            <td><span>@lesson.Auditorium </span></td>
+            <td><span>@lesson.WasAbsence </span></td>
+            @if (IsCurrentUserInRole(RolesEnum.Староста) || IsCurrentUserInRole(RolesEnum.ЗаместительCтаросты))
+            {
+                <td>
+                    <span>
+                        @Html.ActionLink("Отсутствующие", "GetAbsence", "Shedule", new
+                        {
+                   CalendarSheduleTimeSpendingId = lesson.CalendarSheduleTimeSpendingId,
+                   ClassType = lesson.ClassType,
+                   Auditorium = lesson.Auditorium,
+                   EndTime = lesson.EndTime,
+                   StartTime = lesson.StartTime,
+                   Number = lesson.Number,
+                   Subject = lesson.Subject,
+                   WeekNumber = lesson.WeekNumber,
+                    CourseId = lesson.CourseId,
+                    Group = lesson.Group
+               }, new { @class = "compItem" })
+                    </span>
+                </td>
+            }
+        </tr>
+    }
+
+}

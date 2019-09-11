@@ -1,0 +1,42 @@
+﻿@using SHARED.Common.Extensions
+@model Tuple<EJ.Models.UI.MenuLinkItem, bool>
+
+@{
+    var item = Model.Item1;
+}
+@if (!item.ChildItems.Any())
+{
+    <li class="@item.CSS">
+        <a id="@item.Id" class="@item.CSS customRightMenu" asp-area="@item.Area" asp-controller="@item.Controller" asp-action="@item.Action" data-menu-tab-id="@item.Id" data-main-menu-parentid="@item.Id" data-menu-tab>@item.Text</a>
+    </li>
+}
+else
+{
+<li class="dropdown@(Model.Item2 ? "" : "-submenu") @item.CSS">
+    <a href="#" class="dropdown-toggle customRightMenu nav-link text-dark" data-main-menu-parentid="@String.Join(" ",item.ChildItems.SelectManyRecursive(t=>t.ChildItems).Select(k=>k.Id).Distinct()) @item.Id" data-toggle="dropdown">
+        @item.Text
+        <b class="caret"></b>
+    </a>
+    <ul class="dropdown-menu">
+        @{ var groups = item.ChildItems.OrderBy(c => c.Order).GroupBy(c => c.GroupName).ToArray(); }
+        @foreach (var group in groups)
+        {
+            if (!string.IsNullOrEmpty(group.Key))
+            {
+                if (groups.First() != group)
+                {
+                    <li class="divider"></li>
+                }
+                <li class="dropdown-header">@group.Key</li>
+            }
+
+            foreach (var childItem in group.OrderBy(c => c.Order))
+            {
+                @await Component.InvokeAsync("MenuItem", Tuple.Create(childItem, false))
+            }
+        }
+
+    </ul>
+</li>
+}
+

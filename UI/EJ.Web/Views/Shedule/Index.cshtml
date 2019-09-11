@@ -1,0 +1,126 @@
+﻿@using EJ.Models.Enums
+@using EJ.Models.UI
+@using SHARED.Web.Extensions
+@model SheduleDateUi
+
+@{
+    ViewData["Title"] = "Расписание";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var culture = new System.Globalization.CultureInfo("ru-RU");
+}
+
+@if (IsCurrentUserInRole(RolesEnum.Староста) || IsCurrentUserInRole(RolesEnum.Администратор))
+{
+    <form asp-controller="Shedule" asp-action="LoadFile" method="POST" enctype="multipart/form-data">
+        <h4>Выберите файл для загрузки</h4>
+        <input type="file" class="btn btn-dark" name="uploadedFile" accept=".xlsx">
+        <input type="submit" class="btn btn-dark" value="Отправить" disabled>
+    </form>
+
+    <label>Выберите дату начала семестра</label>
+    <input type="date" id="semesterStartDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+
+    <label>Выберите номер первой недели семестра</label>
+    <select id="weekNumber">
+        <option class="form-control" disabled value="">Выберите один из вариантов</option>
+        <option class="form-control" value="1">1</option>
+        <option class="form-control" value="2">2</option>
+    </select>
+    <button id="synchronizeShedule" class="btn btn-dark">Синхронизировать</button>
+}
+<div>
+    <label>Выберите дату</label>
+    <input type="date" id="sheduleDate" class="date" value="@(Model.Date.ToString("yyyy-MM-dd"))" onchange="sheduleDateChanged(this)" />
+</div>
+
+<div>
+    <span class="bold">Группа: </span>
+    <p>@Model.Group.Number @((Model.Group.HalfGroup ? "вторая" : "первая") + " подгруппа")</p>
+</div>
+
+<table border="1" cellpadding="10" cellspacing="10" id="shedule">
+    <partial name="~/Views/Shedule/_CalendarSheduleTimeSpendings.cshtml" model="@((IEnumerable<LessonUi>)Model.Lessons)" />
+</table>
+
+<div id="modDialog" class="modal fade">
+    <div id="dialogContent" class="modal-dialog"></div>
+</div>
+
+@if (!IsCurrentUserInRole(RolesEnum.Администратор) && !IsCurrentUserInRole(RolesEnum.UnAuthorized))
+{
+    <button id="absencePeriod" class="btn btn-dark">Пропуски за период</button>
+}
+
+@section Scripts
+    {
+    <script>
+        $('input[type=file]').change(function () {
+            var hasNoFiles = this.files.length == 0;
+            $(this).closest('form')
+                .find('input[type=submit]')
+                .prop('disabled', hasNoFiles);
+        });
+
+    function sheduleDateChanged(date) {
+        $.ajax({
+            type: "POST",
+            url: "@Url.Action("GetShedule", "Shedule")",
+            data: {
+                sheduleDate: date.value
+            },
+            success: function (data) {
+                var container = $("#shedule");
+                container.empty();
+                container.append(data);
+            }
+        });
+    }
+        $('#synchronizeShedule').click(function () {
+            $.ajax({
+                type: "POST",
+                url: "@Url.Action("SynchronizeShedule", "Shedule")",
+                data: {
+                    date: $("#semesterStartDate").val(),
+                    weekNumber: $("#weekNumber").val()
+                },
+                success: function (data) {
+                    console.log(data);
+                    }
+            });
+        });
+
+     $('#saveAbsence').click(function () {
+            $.ajax({
+                type: "POST",
+                url: "@Url.Action("SaveAbsence", "Shedule")",
+                data: {
+                    date: $("#semesterStartDate").val(),
+                    weekNumber: $("#weekNumber").val()
+                },
+                success: function (data) {
+                    console.log(data);
+                    }
+            });
+        });
+
+
+     $(".compItem").click(function (e) {
+                e.preventDefault();
+                $.get(this.href, function (data) {
+                    $('#dialogContent').html(data);
+                    $('#modDialog').modal('show');
+                });
+     });
+
+        $("#absencePeriod").click(function (e) {
+                e.preventDefault();
+                $.get("@Url.Action("GetAbsencesOnPeriod", "Shedule")", function (data) {
+                    $('#dialogContent').html(data);
+                    $('#modDialog').modal('show');
+                });
+     });
+
+    </script>
+}
+
+

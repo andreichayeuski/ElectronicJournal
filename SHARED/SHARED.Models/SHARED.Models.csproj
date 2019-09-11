@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Company>BSTU</Company>
+    <Authors>BSTU</Authors>
+    <PackageId>SHARED.Models</PackageId>
+    <Product>SHARED.Models</Product>
+   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Trirand.Web.Core\Trirand.Web.Core.csproj" />
+  </ItemGroup>
+    
+ </Project>

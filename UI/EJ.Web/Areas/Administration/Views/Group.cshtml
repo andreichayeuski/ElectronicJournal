@@ -1,0 +1,17 @@
+﻿
+@{
+    ViewData["Title"] = "Группы";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Группы</h1>
+
+<div id="app">
+</div>
+@section Scripts
+    {
+    <script>
+        EJ.Settings.GroupsUrl = '/api/group';
+    </script>
+    <script src="~/js/EJ.Group.Form.js"></script>
+}

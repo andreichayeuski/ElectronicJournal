@@ -1,0 +1,31 @@
+﻿@using EJ.Models.UI
+@model AbsenceFormUi
+
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h4>Пропуски</h4>
+        <button class="close" data-dismiss="modal" area-hidden="true">X</button>
+    </div>
+    <div class="modal-body">
+        <p>@Model.Lesson.Subject</p>
+        <p>
+            @Model.Lesson.ClassType
+            <span>@(Model.Lesson.StartTime.ToString(@"hh\:mm")) - @(Model.Lesson.EndTime.ToString(@"hh\:mm"))</span>
+        </p>
+        <form asp-controller="Shedule" asp-action="SaveAbsence" method="POST">
+            <table border="1" cellpadding="10" cellspacing="10">
+                @for (int i = 0; i < Model.Users.Count(); i++)
+                {
+                    <tr>
+                        <td>@Model.Users[i].Fio</td>
+                        <td>@Html.CheckBoxFor(x => x.IsPresent[i])</td>
+                    </tr>
+                }
+            </table>
+            @Html.TextBoxFor(x => x.CalendarSheduleTimeSpendingId, Model.CalendarSheduleTimeSpendingId.ToString(), new { hidden = true })
+            <br />
+            <input type="submit" class="btn btn-dark" value="Сохранить">
+        </form>
+    </div>
+</div>

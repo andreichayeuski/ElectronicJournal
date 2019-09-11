@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Company>BSTU</Company>
+    <Authors>BSTU</Authors>
+    <PackageId>SHARED.Web</PackageId>
+    <Product>SHARED.Web</Product>
+   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SHARED.Common\SHARED.Common.csproj" />
+    <ProjectReference Include="..\SHARED.Models\SHARED.Models.csproj" />
+    <ProjectReference Include="..\Trirand.Web.Core\Trirand.Web.Core.csproj" />
+  </ItemGroup>
+    
+ </Project>
