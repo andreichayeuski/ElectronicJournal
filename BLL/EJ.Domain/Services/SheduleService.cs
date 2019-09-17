@@ -101,7 +101,7 @@ namespace EJ.Domain.Services
                 while (currentDate != semester.EndDate.AddDays(1))
                 {
                     var day = culture.DateTimeFormat.GetDayName(currentDate.DayOfWeek);
-                    if ((int) currentDate.DayOfWeek == 0)
+                    if ((int)currentDate.DayOfWeek == 0)
                     {
                         weekNumber = weekNumber == 1 ? 2 : 1;
                         currentDate = currentDate.AddDays(1);
@@ -140,6 +140,10 @@ namespace EJ.Domain.Services
         public SheduleDateUi GetSheduleForUser(int userId, DateTime date)
         {
             var userGroup = _userRepository.FindFirst(x => x.Id == userId)?.Group;
+            if (date.Date == DateTime.Now.Date)
+            {
+                date = DateTime.Now;
+            }
             if (userGroup != null)
             {
                 var lessonsFromRepository = _calendarSheduleTimeSpendingRepository
@@ -152,15 +156,15 @@ namespace EJ.Domain.Services
                 {
                     CalendarSheduleTimeSpendingId = x.Id,
                     Auditorium = x.SheduleTimeSpending.Auditorium.Number,
-                    ClassType = (ClassTypeEnum) x.SheduleTimeSpending.ClassTypeId,
+                    ClassType = (ClassTypeEnum)x.SheduleTimeSpending.ClassTypeId,
                     Number = x.SheduleTimeSpending.TimeSpending.Number,
                     StartTime = x.SheduleTimeSpending.TimeSpending.StartTime,
                     EndTime = x.SheduleTimeSpending.TimeSpending.EndTime,
                     WeekNumber = x.SheduleTimeSpending.WeekDay.NumberOfWeek,
                     Subject = x.SheduleTimeSpending.SheduleSubject.Subject.Name
                        ?? x.SheduleTimeSpending.SheduleSubject.Subject.ShortName,
-                    WasAbsence = absences.Count(y => y.CalendarSheduleTimeSpendingId == x.Id) != 0
-                        ? "отсутствовал" : "присутствовал",
+                    WasAbsence = ((DateTime.Now.Date > x.Calendar.Date) || (date.Date == x.Calendar.Date && date.TimeOfDay > x.SheduleTimeSpending.TimeSpending.EndTime)) ? (absences.Count(y => y.CalendarSheduleTimeSpendingId == x.Id) != 0
+                        ? "отсутствовал" : "присутствовал") : "",
                     StartDate = null,
                     EndDate = null,
                     CourseId = userGroup.CourseId,
@@ -184,7 +188,7 @@ namespace EJ.Domain.Services
             var users = _userService.GetCurrentUserAllGroup();
             var userGroup = _userService.GetCurrentUserGroup();
 
-            var calendarSheduleTimeSpending = _calendarSheduleTimeSpendingRepository.FindFirst(x => 
+            var calendarSheduleTimeSpending = _calendarSheduleTimeSpendingRepository.FindFirst(x =>
                 x.Id == lesson.CalendarSheduleTimeSpendingId);
             var absenceAllGroup = new List<Absence>();
             if (calendarSheduleTimeSpending != null)
@@ -324,7 +328,7 @@ namespace EJ.Domain.Services
                 {
                     CalendarSheduleTimeSpendingId = lesson.Id,
                     Auditorium = lesson.SheduleTimeSpending.Auditorium.Number,
-                    ClassType = (ClassTypeEnum) lesson.SheduleTimeSpending.ClassTypeId,
+                    ClassType = (ClassTypeEnum)lesson.SheduleTimeSpending.ClassTypeId,
                     lesson.SheduleTimeSpending.TimeSpending.Number,
                     lesson.SheduleTimeSpending.TimeSpending.StartTime,
                     lesson.SheduleTimeSpending.TimeSpending.EndTime,
@@ -337,7 +341,7 @@ namespace EJ.Domain.Services
                 {
                     CalendarSheduleTimeSpendingId = x.CalendarSheduleTimeSpendingId,
                     Auditorium = x.Auditorium,
-                    ClassType = (ClassTypeEnum) x.ClassType,
+                    ClassType = (ClassTypeEnum)x.ClassType,
                     Number = x.Number,
                     StartTime = x.StartTime,
                     EndTime = x.EndTime,

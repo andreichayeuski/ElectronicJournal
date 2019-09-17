@@ -56,7 +56,7 @@ namespace EJ.Web
                 {
                     options.AccessDeniedPath = "/Home/AccessDenied";
                     options.Cookie.HttpOnly = true;
-                    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
                     options.LoginPath = "/Account/Login";
                     options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                     options.SlidingExpiration = true;

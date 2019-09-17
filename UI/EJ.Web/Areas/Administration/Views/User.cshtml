@@ -4,5 +4,14 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-    <h1>Пользователи</h1>
+<h1>Пользователи</h1>
 
+<div id="app">
+</div>
+@section Scripts
+    {
+    <script>
+        EJ.Settings.UserUrl = '/api/user';
+    </script>
+    <script src="~/js/EJ.User.Form.js"></script>
+}

@@ -99,7 +99,7 @@ button {
 }
 
 button {
-    vertical-align:central;
+    vertical-align: central;
     margin: 3px 3px 3px 3px;
 }
 
@@ -129,8 +129,8 @@ label {
     margin: 7px;
 }
 
-.bold{
-    font-weight:500;
+.bold {
+    font-weight: 500;
 }
 
 .input-group-prepend {
@@ -151,10 +151,27 @@ label {
     }
 }
 
-.nav-link-sub{
+.nav-link-sub {
     margin: 5px;
 }
 
 .dropdown-menu {
     padding-left: 5px;
+}
+
+#shedule {
+    overflow-x: auto;
+}
+
+.footer .container {
+    flex-flow: column;
+}
+
+    .footer .container div {
+        line-height: 30px;
+    }
+
+.box button {
+    float: none;
+    margin: 5px 0px;
 }

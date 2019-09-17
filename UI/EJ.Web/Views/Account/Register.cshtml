@@ -58,7 +58,7 @@
             <p><input name="Sex" type="radio" value="true"> Мужской</p>
         </div>
         <div>
-            <label asp-for="GroupId">Группа</label><br />
+            <label asp-for="GroupId">Группа/подгруппа</label><br />
             <select name="GroupId">
                 @if (((IEnumerable<GroupUi>) ViewBag.Groups).Count() != 0)
                 {

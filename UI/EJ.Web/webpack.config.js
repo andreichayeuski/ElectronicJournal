@@ -5,7 +5,8 @@ const vueLoaderPlugin = require('vue-loader/lib/plugin')
 module.exports = {
     mode: 'development',
     entry: {
-        'EJ.Group.Form': "./wwwroot/app/js/Group/Components/main.js"
+        'EJ.Group.Form': "./wwwroot/app/js/Group/Components/main.js",
+        'EJ.User.Form': "./wwwroot/app/js/User/Components/main.js"
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js'),

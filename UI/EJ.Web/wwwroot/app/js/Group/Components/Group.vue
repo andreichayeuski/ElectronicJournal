@@ -2,9 +2,9 @@
     <div id="administration">
         <div v-show="groupsShowed">
             <div class="title">
-                <label class="header">Группы</label>
+                <!--<label class="header">Группы</label>-->
                 <button v-on:click="addGroup()" class="btn btn-dark">Добавить группу</button>
-                <button v-on:click="showUsers()" class="btn btn-dark">Перечень пользователей</button>
+                <!--<button v-on:click="showUsers()" class="btn btn-dark">Перечень пользователей</button>-->
             </div>
             <div v-for="group, i in groups" class="group">
                 <div class="edit-div" v-if="editGroup === group.id">
@@ -55,10 +55,10 @@
                 </div>
             </div>
         </div>
-        <div v-show="usersShowed">
+        <!--<div v-show="usersShowed">
             <div class="title">
                 <label class="header">Пользователи</label>
-                <!--<button v-on:click="addUser()" class="btn btn-dark">Добавить пользователя</button>-->
+                <button v-on:click="addUser()" class="btn btn-dark">Добавить пользователя</button>
                 <button v-on:click="showGroups()" class="btn btn-dark">Перечень групп</button>
             </div>
             <div class="user" v-for="user, i in users">
@@ -158,7 +158,7 @@
                     <button class="btn-sm btn-dark" v-on:click="deleteUser(user.id, i)">x</button>
                 </div>
             </div>
-        </div>
+        </div>-->
     </div>
 </template>
 
@@ -167,7 +167,7 @@
     import moment from 'moment'
     export default {
         name: 'group',
-        props: ['url', 'data'],
+        props: ['url'],
         data() {
             return {
                 groupsShowed: false,

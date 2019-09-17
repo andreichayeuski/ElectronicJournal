@@ -26,7 +26,10 @@
         <option class="form-control" value="1">1</option>
         <option class="form-control" value="2">2</option>
     </select>
-    <button id="synchronizeShedule" class="btn btn-dark">Синхронизировать</button>
+
+    <div class="box">
+        <button id="synchronizeShedule" class="btn btn-dark">Синхронизировать</button>
+    </div>
 }
 <div>
     <label>Выберите дату</label>
@@ -38,9 +41,7 @@
     <p>@Model.Group.Number @((Model.Group.HalfGroup ? "вторая" : "первая") + " подгруппа")</p>
 </div>
 
-<table border="1" cellpadding="10" cellspacing="10" id="shedule">
-    <partial name="~/Views/Shedule/_CalendarSheduleTimeSpendings.cshtml" model="@((IEnumerable<LessonUi>)Model.Lessons)" />
-</table>
+<partial name="~/Views/Shedule/_CalendarSheduleTimeSpendings.cshtml" model="@((IEnumerable<LessonUi>)Model.Lessons)" />
 
 <div id="modDialog" class="modal fade">
     <div id="dialogContent" class="modal-dialog"></div>
@@ -48,7 +49,9 @@
 
 @if (!IsCurrentUserInRole(RolesEnum.Администратор) && !IsCurrentUserInRole(RolesEnum.UnAuthorized))
 {
-    <button id="absencePeriod" class="btn btn-dark">Пропуски за период</button>
+    <div class="box">
+        <button id="absencePeriod" class="btn btn-dark">Пропуски за период</button>
+    </div>
 }
 
 @section Scripts

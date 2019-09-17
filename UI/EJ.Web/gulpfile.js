@@ -10,6 +10,7 @@
 
 gulp.task('watch', function () {
     gulp.watch('wwwroot/app/js/Group/Components/*.vue', gulp.series('build-scripts'));
+    gulp.watch('wwwroot/app/js/User/Components/*.vue', gulp.series('build-scripts'));
 });
 
 gulp.task('build-scripts', done => {
