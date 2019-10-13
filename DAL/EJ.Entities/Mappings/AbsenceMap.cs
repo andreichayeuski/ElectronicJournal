@@ -8,6 +8,8 @@ namespace EJ.Entities.Mappings
     {
         public void Configure(EntityTypeBuilder<Absence> builder)
         {
+            builder.ToTable("Absence");
+
             builder.HasOne(d => d.User)
                    .WithMany(p => p.Absences)
                    .HasForeignKey(d => d.UserId);

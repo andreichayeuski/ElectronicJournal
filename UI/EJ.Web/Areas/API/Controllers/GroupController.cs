@@ -26,13 +26,13 @@ namespace EJ.Web.Areas.API.Controllers
         }
 
         [HttpPost]
-        public JsonResult Post([FromBody]GroupUi group)
+        public JsonResult Post([FromBody]GroupViewModel group)
         {
             return Json(_groupService.AddGroup(group));
         }
 
         [HttpPut("{id}")]
-        public JsonResult Put(int id, [FromBody]GroupUi value)
+        public JsonResult Put(int id, [FromBody]GroupViewModel value)
         {
             return Json(_groupService.UpdateGroup(id, value));
         }

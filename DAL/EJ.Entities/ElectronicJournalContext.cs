@@ -4,19 +4,26 @@ using EJ.Entities.Mappings;
 
 namespace EJ.Entities
 {
-    public class ElectronicJournalContext : DbContext
+    public class EJContext : DbContext
     {
-        public ElectronicJournalContext()
+        private readonly string _connectionString;
+
+        public EJContext() { }
+
+        public EJContext(DbContextOptions<EJContext> options) : base(options) { }
+
+        public EJContext(string connectionString)
         {
+            _connectionString = connectionString;
         }
 
-        public ElectronicJournalContext(DbContextOptions options)
-            : base(options)
-        { 
-        }
 
+        public virtual DbSet<Absence> Absences { get; set; }
+        public virtual DbSet<AbsenceNotification> AbsenceNotifications { get; set; }
         public virtual DbSet<Auditorium> Auditoriums { get; set; }
         public virtual DbSet<ClassType> ClassTypes { get; set; }
+        public virtual DbSet<Calendar> Calendars { get; set; }
+        public virtual DbSet<CalendarSheduleTimeSpending> CalendarSheduleTimeSpendings { get; set; }
         public virtual DbSet<Course> Courses { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<GroupShedule> GroupShedules { get; set; }
@@ -35,7 +42,8 @@ namespace EJ.Entities
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("ElectronicJournalDatabase");
+                optionsBuilder.UseSqlServer(_connectionString);
+                optionsBuilder.UseLazyLoadingProxies();
             }
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -61,7 +69,7 @@ namespace EJ.Entities
             modelBuilder.ApplyConfiguration(new UserStateMap());
             modelBuilder.ApplyConfiguration(new WeekDayMap());
 
-            base.OnModelCreating(modelBuilder);
+            //modelBuilder.ApplyConfigurationsFromAssembly(typeof(EJContext).Assembly);
         }
     }
 }

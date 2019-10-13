@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
 using EJ.Entities.Models;
 using EJ.Models.Enums;
 using EJ.Models.Interfaces;
@@ -19,13 +21,13 @@ namespace EJ.Domain.Services
 
         ObjectResult SynchronizeSheduleAndSemester(DateTime startSemesterDate, int weekNumber);
 
-        SheduleDateUi GetSheduleForUser(int userId, DateTime date);
+        SheduleDateViewModel GetSheduleForUser(int userId, DateTime date);
 
-        AbsenceFormUi GetAbsence(LessonUi lesson);
+        AbsenceViewModel GetAbsence(LessonViewModel lesson);
 
         Task<ObjectResult> SaveAbsence(List<bool> isPresent, int calendarSheduleTimeSpendingId, string baseUrl);
 
-        SheduleDateUi GetAbsencesOnPeriod(DateTime startDate, DateTime endDate);
+        SheduleDateViewModel GetAbsencesOnPeriod(DateTime startDate, DateTime endDate);
 
         DateTime GetSemesterDate();
     }
@@ -36,49 +38,14 @@ namespace EJ.Domain.Services
         protected readonly IUserService _userService;
         protected readonly IConverterService _converterService;
         protected readonly IMapper Mapper;
-        protected readonly IRepository<Absence> _absenceRepository;
-        protected readonly IRepository<AbsenceNotification> _absenceNotificationRepository;
-        protected readonly IRepository<Auditorium> _auditoriumRepository;
-        protected readonly IRepository<Calendar> _calendarRepository;
-        protected readonly IRepository<CalendarSheduleTimeSpending> _calendarSheduleTimeSpendingRepository;
-        protected readonly IRepository<TimeSpending> _timeSpendingRepository;
-        protected readonly IRepository<Group> _groupRepository;
-        protected readonly IRepository<GroupShedule> _groupSheduleRepository;
-        protected readonly IRepository<Semester> _semesterRepository;
-        protected readonly IRepository<SheduleSubject> _sheduleSubjectRepository;
-        protected readonly IRepository<SheduleTimeSpending> _sheduleTimeSpendingRepository;
-        protected readonly IRepository<Subject> _subjectRepository;
-        protected readonly IRepository<WeekDay> _weekDayRepository;
-        protected readonly IRepository<User> _userRepository;
+        private readonly EJContext _eJContext;
 
-        public SheduleService(IMapper mapper, IRepository<Absence> absenceRepository,
-            IRepository<AbsenceNotification> absenceNotificationRepository,
-            IRepository<Auditorium> auditoriumRepository,
-            IRepository<Calendar> calendarRepository,
-            IRepository<CalendarSheduleTimeSpending> calendarSheduleTimeSpendingRepository,
-            IRepository<TimeSpending> timeSpendingRepository,
-            IRepository<Group> groupRepository, IRepository<GroupShedule> groupSheduleRepository,
-            IRepository<SheduleSubject> sheduleSubjectRepository,
-            IRepository<SheduleTimeSpending> sheduleTimeSpendingRepository,
-            IRepository<Subject> subjectRepository, IRepository<Semester> semesterRepository,
-            IRepository<WeekDay> weekDayRepository, IRepository<User> userRepository,
+        public SheduleService(IMapper mapper,
+            IDbContextFactory contextFactory,
             IEMailService eMailService,
             IConverterService converterService, IUserService userService)
         {
-            _absenceRepository = absenceRepository;
-            _absenceNotificationRepository = absenceNotificationRepository;
-            _auditoriumRepository = auditoriumRepository;
-            _calendarRepository = calendarRepository;
-            _calendarSheduleTimeSpendingRepository = calendarSheduleTimeSpendingRepository;
-            _timeSpendingRepository = timeSpendingRepository;
-            _groupRepository = groupRepository;
-            _groupSheduleRepository = groupSheduleRepository;
-            _sheduleSubjectRepository = sheduleSubjectRepository;
-            _sheduleTimeSpendingRepository = sheduleTimeSpendingRepository;
-            _subjectRepository = subjectRepository;
-            _semesterRepository = semesterRepository;
-            _weekDayRepository = weekDayRepository;
-            _userRepository = userRepository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
             _eMailService = eMailService;
             _converterService = converterService;
             _userService = userService;
@@ -92,7 +59,7 @@ namespace EJ.Domain.Services
 
         public ObjectResult SynchronizeSheduleAndSemester(DateTime startSemesterDate, int weekNumber)
         {
-            var semester = _semesterRepository.FindFirst(x => x.StartDate == startSemesterDate);
+            var semester = _eJContext.Semesters.FirstOrDefault(x => x.StartDate == startSemesterDate);
             var culture = new System.Globalization.CultureInfo("ru-RU");
 
             if (semester != null)
@@ -101,27 +68,27 @@ namespace EJ.Domain.Services
                 while (currentDate != semester.EndDate.AddDays(1))
                 {
                     var day = culture.DateTimeFormat.GetDayName(currentDate.DayOfWeek);
-                    if ((int)currentDate.DayOfWeek == 0)
+                    if (currentDate.DayOfWeek == 0)
                     {
                         weekNumber = weekNumber == 1 ? 2 : 1;
                         currentDate = currentDate.AddDays(1);
                     }
                     else
                     {
-                        var weekDay = _weekDayRepository.FindFirst(x => x.NumberOfWeek == weekNumber && x.Day.ToLower() == day.ToLower());
+                        var weekDay = _eJContext.WeekDays.FirstOrDefault(x => x.NumberOfWeek == weekNumber && x.Day.ToLower() == day.ToLower());
                         if (weekDay != null)
                         {
-                            var calendar = _calendarRepository.FindFirst(x => x.Date == currentDate) ??
-                                _calendarRepository.Add(new Calendar { Date = currentDate });
-                            var sheduleTimeSpendings = _sheduleTimeSpendingRepository.Find(x => x.WeekDayId == weekDay.Id);
+                            var calendar = _eJContext.Calendars?.FirstOrDefault(x => x.Date == currentDate) ??
+                                _eJContext.Calendars.Add(new Calendar { Date = currentDate }).Entity;
+                            var sheduleTimeSpendings = _eJContext.SheduleTimeSpendings.Where(x => x.WeekDayId == weekDay.Id);
                             if (calendar != null && sheduleTimeSpendings.Count() != 0)
                             {
                                 foreach (var sheduleTimeSpending in sheduleTimeSpendings)
                                 {
-                                    if (_calendarSheduleTimeSpendingRepository.FindFirst(x => x.SheduleTimeSpendingId == sheduleTimeSpending.Id
-                                        && x.CalendarId == calendar.Id) == null)
+                                    if (!_eJContext.CalendarSheduleTimeSpendings.Any(x => x.SheduleTimeSpendingId == sheduleTimeSpending.Id
+                                        && x.CalendarId == calendar.Id))
                                     {
-                                        _calendarSheduleTimeSpendingRepository.Add(new CalendarSheduleTimeSpending
+                                        _eJContext.CalendarSheduleTimeSpendings.Add(new CalendarSheduleTimeSpending
                                         {
                                             CalendarId = calendar.Id,
                                             SheduleTimeSpendingId = sheduleTimeSpending.Id
@@ -133,26 +100,27 @@ namespace EJ.Domain.Services
                         }
                     }
                 }
+                _eJContext.SaveChanges();
             }
             return new OkObjectResult(true);
         }
 
-        public SheduleDateUi GetSheduleForUser(int userId, DateTime date)
+        public SheduleDateViewModel GetSheduleForUser(int userId, DateTime date)
         {
-            var userGroup = _userRepository.FindFirst(x => x.Id == userId)?.Group;
+            var userGroup = _eJContext.Users.Find(userId)?.Group;
             if (date.Date == DateTime.Now.Date)
             {
                 date = DateTime.Now;
             }
             if (userGroup != null)
             {
-                var lessonsFromRepository = _calendarSheduleTimeSpendingRepository
-                    .Find(x => x.Calendar.Date.Date == date.Date
+                var lessonsFromRepository = _eJContext.CalendarSheduleTimeSpendings
+                    .Where(x => x.Calendar.Date.Date == date.Date
                         && x.SheduleTimeSpending.SheduleSubject.GroupShedule.GroupId == userGroup.Id);
-                var absences = _absenceRepository.GetAll().Where(x =>
+                var absences = _eJContext.Absences.Where(x =>
                     x.CalendarSheduleTimeSpending.Calendar.Date.Date == date.Date
                     && x.UserId == _userService.CurrentUserId);
-                var lessons = lessonsFromRepository.Select(x => new LessonUi
+                var lessons = lessonsFromRepository.Select(x => new LessonViewModel
                 {
                     CalendarSheduleTimeSpendingId = x.Id,
                     Auditorium = x.SheduleTimeSpending.Auditorium.Number,
@@ -170,30 +138,31 @@ namespace EJ.Domain.Services
                     CourseId = userGroup.CourseId,
                     Group = userGroup.Number
                 });
-                return new SheduleDateUi
+                userGroup.EndDate = DateTime.Now;
+                return new SheduleDateViewModel
                 {
                     Date = date,
-                    Group = Mapper.Map<GroupUi>(userGroup),
+                    Group = Mapper.Map<GroupViewModel>(userGroup),
                     Lessons = lessons
                 };
             }
             else
             {
-                return new SheduleDateUi();
+                return new SheduleDateViewModel();
             }
         }
 
-        public AbsenceFormUi GetAbsence(LessonUi lesson)
+        public AbsenceViewModel GetAbsence(LessonViewModel lesson)
         {
             var users = _userService.GetCurrentUserAllGroup();
             var userGroup = _userService.GetCurrentUserGroup();
 
-            var calendarSheduleTimeSpending = _calendarSheduleTimeSpendingRepository.FindFirst(x =>
+            var calendarSheduleTimeSpending = _eJContext.CalendarSheduleTimeSpendings.FirstOrDefault(x =>
                 x.Id == lesson.CalendarSheduleTimeSpendingId);
             var absenceAllGroup = new List<Absence>();
             if (calendarSheduleTimeSpending != null)
             {
-                absenceAllGroup.AddRange(_absenceRepository.Find(x =>
+                absenceAllGroup.AddRange(_eJContext.Absences.Where(x =>
                     x.CalendarSheduleTimeSpending.SheduleTimeSpending.TimeSpending.Number ==
                         calendarSheduleTimeSpending.SheduleTimeSpending.TimeSpending.Number
                     && x.CalendarSheduleTimeSpending.Calendar.Date ==
@@ -204,9 +173,9 @@ namespace EJ.Domain.Services
                         userGroup.CourseId));
             }
 
-            var absence = new AbsenceFormUi
+            var absence = new AbsenceViewModel
             {
-                Users = users.Select(UserService.mapUserToUserInfoUi).ToList(),
+                Users = users.Select(x => Mapper.Map<UserInfoViewModel>(x)).ToList(),
                 Lesson = lesson,
                 CalendarSheduleTimeSpendingId = lesson.CalendarSheduleTimeSpendingId
             };
@@ -221,11 +190,10 @@ namespace EJ.Domain.Services
         public async Task<ObjectResult> SaveAbsence(List<bool> isPresent, int calendarSheduleTimeSpendingId, string baseUrl)
         {
             var userGroup = _userService.GetCurrentUserGroup();
-            var calendarSheduleTimeSpending = _calendarSheduleTimeSpendingRepository
-                .FindFirst(x => x.Id == calendarSheduleTimeSpendingId);
+            var calendarSheduleTimeSpending = _eJContext.CalendarSheduleTimeSpendings.Find(calendarSheduleTimeSpendingId);
             var usersInGroup = _userService.GetCurrentUserAllGroup()
                 .Select(x => new { x.Id, x.Email, x.GroupId }).ToList();
-            var calendarSheduleTimeSpendings = _calendarSheduleTimeSpendingRepository.Find(x =>
+            var calendarSheduleTimeSpendings = _eJContext.CalendarSheduleTimeSpendings.Where(x =>
                  x.SheduleTimeSpending.TimeSpending.Number ==
                     calendarSheduleTimeSpending.SheduleTimeSpending.TimeSpending.Number
                  && x.Calendar.Date ==
@@ -235,7 +203,7 @@ namespace EJ.Domain.Services
                  && x.SheduleTimeSpending.SheduleSubject.GroupShedule.Group.CourseId ==
                     userGroup.CourseId);
 
-            var absenceAllGroup = _absenceRepository.Find(x => calendarSheduleTimeSpendings.Select(y => y.Id)
+            var absenceAllGroup = _eJContext.Absences.Where(x => calendarSheduleTimeSpendings.Select(y => y.Id)
                 .Contains(x.CalendarSheduleTimeSpendingId)).ToList();
 
             if (absenceAllGroup.Count != 0)
@@ -245,7 +213,7 @@ namespace EJ.Domain.Services
                     var indexOfUser = usersInGroup.Select(x => x.Id).ToList().IndexOf(absenceAllGroup[i].User.Id);
                     if (indexOfUser != -1)
                     {
-                        var currentCalendarSheduleTimeSpending = calendarSheduleTimeSpendings.First(x =>
+                        var currentCalendarSheduleTimeSpending = calendarSheduleTimeSpendings.FirstOrDefault(x =>
                             x.SheduleTimeSpending.SheduleSubject.GroupShedule.GroupId == usersInGroup[indexOfUser].GroupId);
                         var classType = currentCalendarSheduleTimeSpending.SheduleTimeSpending.ClassType.Name;
                         var subjectName = currentCalendarSheduleTimeSpending.SheduleTimeSpending.SheduleSubject.Subject.Name
@@ -263,7 +231,7 @@ namespace EJ.Domain.Services
 
                             if (eMailSendingResult)
                             {
-                                _absenceRepository.Remove(absenceAllGroup[i]);
+                                _eJContext.Absences.Remove(absenceAllGroup[i]);
                             }
                         }
                     }
@@ -275,7 +243,7 @@ namespace EJ.Domain.Services
                 if (isPresent[i] && absenceAllGroup.Select(x => x.UserId).ToList()
                     .IndexOf(usersInGroup[i].Id) == -1)
                 {
-                    var currentCalendarSheduleTimeSpending = calendarSheduleTimeSpendings.First(x =>
+                    var currentCalendarSheduleTimeSpending = calendarSheduleTimeSpendings.FirstOrDefault(x =>
                             x.SheduleTimeSpending.SheduleSubject.GroupShedule.GroupId == usersInGroup[i].GroupId);
                     var classType = currentCalendarSheduleTimeSpending.SheduleTimeSpending.ClassType.Name;
                     var subjectName = currentCalendarSheduleTimeSpending.SheduleTimeSpending.SheduleSubject.Subject.Name
@@ -291,19 +259,20 @@ namespace EJ.Domain.Services
 
                     if (eMailSendingResult)
                     {
-                        var absenceInRepository = _absenceRepository.Add(new Absence
+                        var absenceInRepository = _eJContext.Absences.Add(new Absence
                         {
                             UserId = usersInGroup[i].Id,
                             CalendarSheduleTimeSpendingId = currentCalendarSheduleTimeSpending.Id
                         });
-                        _absenceNotificationRepository.Add(new AbsenceNotification
+                        _eJContext.AbsenceNotifications.Add(new AbsenceNotification
                         {
-                            AbsenceId = absenceInRepository.Id,
+                            AbsenceId = absenceInRepository.Entity.Id,
                             SendDate = DateTime.Now
                         });
                     }
                 }
             }
+            _eJContext.SaveChanges();
 
             return await Task.Run(() =>
             {
@@ -311,15 +280,15 @@ namespace EJ.Domain.Services
             });
         }
 
-        public SheduleDateUi GetAbsencesOnPeriod(DateTime startDate, DateTime endDate)
+        public SheduleDateViewModel GetAbsencesOnPeriod(DateTime startDate, DateTime endDate)
         {
-            var userGroup = _userRepository.FindFirst(x => x.Id == _userService.CurrentUserId)?.Group;
+            var userGroup = _eJContext.Users.Find(_userService.CurrentUserId)?.Group;
             if (userGroup != null)
             {
-                var lessonsFromRepository = _calendarSheduleTimeSpendingRepository.Find(x =>
+                var lessonsFromRepository = _eJContext.CalendarSheduleTimeSpendings.Where(x =>
                     x.Calendar.Date.Date >= startDate.Date && x.Calendar.Date.Date <= endDate.Date
                     && x.SheduleTimeSpending.SheduleSubject.GroupShedule.GroupId == userGroup.Id);
-                var absences = _absenceRepository.GetAll().Where(x =>
+                var absences = _eJContext.Absences.Where(x =>
                     x.CalendarSheduleTimeSpending.Calendar.Date.Date >= startDate.Date
                     && x.CalendarSheduleTimeSpending.Calendar.Date.Date <= endDate.Date
                     && x.UserId == _userService.CurrentUserId);
@@ -337,11 +306,11 @@ namespace EJ.Domain.Services
                        ?? lesson.SheduleTimeSpending.SheduleSubject.Subject.ShortName,
                     WasAbsence = "отсутствовал"
                 })
-                .Select(x => new LessonUi
+                .Select(x => new LessonViewModel
                 {
                     CalendarSheduleTimeSpendingId = x.CalendarSheduleTimeSpendingId,
                     Auditorium = x.Auditorium,
-                    ClassType = (ClassTypeEnum)x.ClassType,
+                    ClassType = x.ClassType,
                     Number = x.Number,
                     StartTime = x.StartTime,
                     EndTime = x.EndTime,
@@ -351,19 +320,19 @@ namespace EJ.Domain.Services
                     StartDate = startDate,
                     EndDate = endDate
                 });
-                return new SheduleDateUi
+                return new SheduleDateViewModel
                 {
                     Date = endDate,
-                    Group = Mapper.Map<GroupUi>(userGroup),
+                    Group = Mapper.Map<GroupViewModel>(userGroup),
                     Lessons = lessons
                 };
             }
-            return new SheduleDateUi();
+            return new SheduleDateViewModel();
         }
 
         public DateTime GetSemesterDate()
         {
-            var semester = _semesterRepository.FindFirst(x => x.StartDate <= DateTime.Now
+            var semester = _eJContext.Semesters.FirstOrDefault(x => x.StartDate <= DateTime.Now
                 && x.EndDate >= DateTime.Now);
             return semester?.StartDate ?? DateTime.Now;
         }

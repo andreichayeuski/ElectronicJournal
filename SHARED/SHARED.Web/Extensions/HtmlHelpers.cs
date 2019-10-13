@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
-using Microsoft.AspNetCore.Mvc.ViewFeatures.Internal;
 using SHARED.Common.Extensions;
 using SHARED.Common.Utils;
 using Microsoft.AspNetCore.Routing;
@@ -122,7 +121,10 @@ namespace SHARED.Web.Extensions
 
         private static IHtmlContent CreateAutocompleteFor<T, TResult>(this IHtmlHelper<T> helper, Expression<Func<T, TResult>> expr, string url, int resultsPerPage, object htmlAttributes, SelectListItem[] defaultItems = null)
         {
-            var name = ExpressionHelper.GetExpressionText(expr);
+            var expresionProvider = helper.ViewContext.HttpContext.RequestServices
+                .GetService(typeof(ModelExpressionProvider)) as ModelExpressionProvider;
+
+            var name = expresionProvider.GetExpressionText(expr);
             return CreateAutocomplete(helper, name, url, resultsPerPage, htmlAttributes, defaultItems);
         }
 

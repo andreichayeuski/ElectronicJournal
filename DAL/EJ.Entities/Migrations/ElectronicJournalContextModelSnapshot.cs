@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EJ.Entities.Migrations
 {
-    [DbContext(typeof(ElectronicJournalContext))]
+    [DbContext(typeof(EJContext))]
     partial class ElectronicJournalContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

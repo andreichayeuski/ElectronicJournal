@@ -10,8 +10,8 @@ using System.Globalization;
 using AutoMapper;
 using EJ.Web.Extensions;
 using Microsoft.AspNetCore.Localization;
-using Swashbuckle.AspNetCore.Swagger;
-using Microsoft.AspNetCore.SpaServices.Webpack;
+//using Swashbuckle.AspNetCore.Swagger;
+//using Microsoft.AspNetCore.SpaServices.Webpack;
 
 namespace EJ.Web
 {
@@ -26,7 +26,35 @@ namespace EJ.Web
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSwaggerGen(c =>
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.CheckConsentNeeded = context => true;
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+            });
+
+            services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(10);
+                options.Cookie.IsEssential = true;
+                options.Cookie.Name = "electronic_journal";
+            });
+
+            /*services.AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.SetMinimumLevel(LogLevel.Information);
+                loggingBuilder.AddNLog(Configuration);
+            });*/
+
+
+            services.AddBaseHttp();
+            services.AddSessionCache();
+            services.AddAutoMapperProfiles();
+            services.AddBaseDbContexts(Configuration);
+            services.AddDbContextFactory();
+            services.AddUserInfo();
+            services.AddWebServices();
+            /*services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info
                 {
@@ -40,7 +68,7 @@ namespace EJ.Web
                         Url = "https://vk.com/andreichayeuski"
                     }
                 });
-            });
+            });*/
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -49,7 +77,6 @@ namespace EJ.Web
             });
             // Automatically perform database migration
             //services.BuildServiceProvider().GetService<ApplicationContext>().Database.Migrate();
-            services.AddAutoMapper(cfg => cfg.AddProfiles("EJ.Models"));
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
@@ -64,14 +91,9 @@ namespace EJ.Web
 
             services.AddSession(opt =>
             {
-                opt.IdleTimeout = TimeSpan.FromMinutes(10);
-                opt.Cookie.IsEssential = true;
-                opt.Cookie.Name = "electronic_journal";
             });
 
-            services.AddServices(Configuration);
-            services.AddDbContexts(Configuration);
-            services.AddRepositories(Configuration);
+            services.AddWebServices();
 
             services.AddMvc();
         }
@@ -81,10 +103,10 @@ namespace EJ.Web
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions()
+                /*app.UseWebpackDevMiddleware(new WebpackDevMiddlewareOptions()
                 {
                     HotModuleReplacement = true
-                });
+                });*/
             }
             else
             {
@@ -92,19 +114,26 @@ namespace EJ.Web
 
                 app.UseHsts();
             }
+
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
+            //app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), 
             // specifying the Swagger JSON endpoint.
-            app.UseSwaggerUI(c =>
+            /*app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Electronic Journal");
-            });
+            });*/
             var appCulture = new CultureInfo("ru-RU");
             //var secondAppCulture = new CultureInfo("en-US");
             //appCulture.NumberFormat.CurrencyDecimalSeparator = appCulture.NumberFormat.PercentDecimalSeparator = appCulture.NumberFormat.NumberDecimalSeparator = ".";
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseCors();
+
             app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseRequestLocalization(new RequestLocalizationOptions
             {
                 DefaultRequestCulture = new RequestCulture(appCulture),
@@ -121,13 +150,17 @@ namespace EJ.Web
             });
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
             app.UseCookiePolicy();
             //app.UseMiddleware<RequestLoginMiddleware>();
             //app.UseMiddleware<EJActionExceptionCatcherMiddleware>();
             app.UseSession();
 
-            app.UseMvc(routes =>
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute("defaultArea", "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+            });
+            /*app.UseMvc(routes =>
             {
                 routes.MapRoute(
                     "defaultArea",
@@ -136,7 +169,7 @@ namespace EJ.Web
                     "default",
                     "{controller=Home}/{action=Index}/{id?}");
 
-            });
+            });*/
         }
     }
 }

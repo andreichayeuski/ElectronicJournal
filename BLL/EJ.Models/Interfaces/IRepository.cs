@@ -11,7 +11,7 @@ namespace EJ.Models.Interfaces
     {
         T Find(int id);
 
-        Task<T> FindAsync(int id);
+        ValueTask<T> FindAsync(int id);
 
         T FindFirst(Expression<Func<T, bool>> predicate);
 

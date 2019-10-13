@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EJ.Entities.Migrations
 {
-    [DbContext(typeof(ElectronicJournalContext))]
+    [DbContext(typeof(EJContext))]
     [Migration("20190509105146_TimeSpendingDate_To_TimeSpane")]
     partial class TimeSpendingDate_To_TimeSpane
     {

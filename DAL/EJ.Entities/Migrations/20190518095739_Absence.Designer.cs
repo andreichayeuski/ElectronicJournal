@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EJ.Entities.Migrations
 {
-    [DbContext(typeof(ElectronicJournalContext))]
+    [DbContext(typeof(EJContext))]
     [Migration("20190518095739_Absence")]
     partial class Absence
     {

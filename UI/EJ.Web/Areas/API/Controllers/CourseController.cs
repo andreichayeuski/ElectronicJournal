@@ -26,13 +26,13 @@ namespace EJ.Web.Areas.API.Controllers
         }
 
         [HttpPost]
-        public JsonResult Post([FromBody]CourseUi course)
+        public JsonResult Post([FromBody]CourseViewModel course)
         {
             return Json(_courseService.AddCourse(course));
         }
 
         [HttpPut("{id}")]
-        public JsonResult Put(int id, [FromBody]CourseUi value)
+        public JsonResult Put(int id, [FromBody]CourseViewModel value)
         {
             return Json(_courseService.UpdateCourse(id, value));
         }

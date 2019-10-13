@@ -1,0 +1,42 @@
+﻿@using EJ.Models.UI
+@Model DateTime
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h4>Период учёбы</h4>
+        <button class="close" data-dismiss="modal" area-hidden="true">X</button>
+    </div>
+    <div class="modal-body">
+        <div class="form-row">
+            <label class="label col-form-label">Дата начала периода</label>
+            <input class="form-control" id="startDate" type="date" value="@(Model.ToString("yyyy-MM-dd"))" />
+        </div>
+        <div class="form-row">
+            <label class="label col-form-label">Дата конца периода</label>
+            <input type="date" id="endDate" class="form-control" value="@(DateTime.Now.ToString("yyyy-MM-dd"))" />
+        </div>
+
+    </div>
+    <div class="modal-footer">
+        <button id="getAbsencesOnPeriod" class="btn btn-dark">Получить</button>
+    </div>
+</div>
+
+<script>
+    $("#getAbsencesOnPeriod").on("click", function (e) {
+        $.ajax({
+                type: "POST",
+                url: "@Url.Action("GetAbsencesOnPeriod", "Shedule")",
+                data: {
+                    startDate: $("#startDate").val(),
+                    endDate: $("#endDate").val()
+                },
+                success: function (data) {
+                    var container = $("#shedule");
+                    container.empty();
+                    container.append(data);
+                    $('#modDialog').modal('hide');
+                    }
+            });
+     });
+</script>

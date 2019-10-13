@@ -99,7 +99,7 @@ namespace EJ.UnitTests.Services
             services.AddScoped<ISheduleService, SheduleService>();
             ServiceLifetime dbContextLifeTime = DbContextServiceLifetime;
 
-            services.AddDbContext<DbContext, ElectronicJournalContext>(options =>
+            services.AddDbContext<DbContext, EJContext>(options =>
                options
                  .UseLazyLoadingProxies()
                  .UseSqlServer(Configuration.GetConnectionString("ElectronicJournalDatabase")),

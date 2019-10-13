@@ -1,5 +1,5 @@
 ﻿@using EJ.Models.UI
-@model EJ.Models.UI.RegisterUI
+@model EJ.Models.UI.RegisterViewModel
 @{
     ViewData["Title"] = "Регистрация";
 }
@@ -60,9 +60,9 @@
         <div>
             <label asp-for="GroupId">Группа/подгруппа</label><br />
             <select name="GroupId">
-                @if (((IEnumerable<GroupUi>) ViewBag.Groups).Count() != 0)
+                @if (((IEnumerable<GroupViewModel>) ViewBag.Groups).Count() != 0)
                 {
-                    foreach (var item in (IEnumerable<GroupUi>) ViewBag.Groups)
+                    foreach (var item in (IEnumerable<GroupViewModel>) ViewBag.Groups)
                     {
                         <option value="@(item.Id)">@(item.Number + "/" + (item.HalfGroup ? "2" : "1"))</option>
                     }

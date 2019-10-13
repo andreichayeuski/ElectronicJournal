@@ -14,22 +14,24 @@ using System.Threading.Tasks;
 using SHARED.Common.Extensions;
 using System.Collections.Generic;
 using System;
+using EJ.Entities;
+using EJ.Domain.Services.DbContextScopeFactory;
 
 namespace EJ.Domain.Services
 {
     public interface IUserService : IBaseUserService
     {
-        Task<UserInfoUi> Login(LoginUI model);
+        Task<UserInfoViewModel> Login(LoginViewModel model);
 
         Task<bool> Exists(string model);
 
-        Task<UserInfoUi> Register(RegisterUI model);
+        Task<UserInfoViewModel> Register(RegisterViewModel model);
 
-        IEnumerable<UserInfoUi> GetUsers();
-        UserInfoUi GetUser(int id);
-        UserInfoUi AddUser(UserInfoUi group);
+        IEnumerable<UserInfoViewModel> GetUsers();
+        UserInfoViewModel GetUser(int id);
+        UserInfoViewModel AddUser(UserInfoViewModel group);
         bool DeleteUser(int id);
-        bool UpdateUser(int id, UserInfoUi group);
+        bool UpdateUser(int id, UserInfoViewModel group);
         Group GetCurrentUserGroup();
         List<User> GetCurrentUserAllGroup();
     }
@@ -39,42 +41,21 @@ namespace EJ.Domain.Services
         protected readonly IEMailService EMailService;
         protected readonly IAuthorizationService AuthorizationService;
         private readonly SaltConfiguration SaltConfiguration;
-        private readonly IRepository<Group> _groupRepository;
+        private readonly EJContext _eJContext;
 
         public UserService(
              IServiceCache cache,
              IEMailService eMailService,
-             IRepository<User> userRepository,
-             IRepository<Group> groupRepository,
+             IDbContextFactory contextFactory,
              IMapper mapper, IHttpContextAccessor httpContext,
              IAuthorizationService authorizationService, IConfiguration configuration)
-             : base(cache, userRepository, mapper, httpContext)
+             : base(cache, contextFactory, mapper, httpContext)
         {
             EMailService = eMailService;
             AuthorizationService = authorizationService;
             SaltConfiguration = configuration.GetSection("Salt").Get<SaltConfiguration>();
-            _groupRepository = groupRepository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
         }
-
-        public static Func<User, UserInfoUi> mapUserToUserInfoUi = x =>
-         new UserInfoUi
-         {
-             Id = x.Id,
-             FName = x.FName,
-             MName = x.MName,
-             SName = x.SName,
-             Email = x.Email,
-             BirthDay = x.BirthDay,
-             PersonalNumber = x.PersonalNumber,
-             GroupId = x.GroupId,
-             UserStateId = x.UserStateId,
-             StartDate = x.StartDate,
-             RemovalDate = x.RemovalDate,
-             Sex = x.Sex,
-             RoleId = x.RoleId,
-             RoleName = x.Role.Name,
-             Fio = x.Fio
-         };
 
         private byte[] GetPasswordBytes(string password)
         {
@@ -83,28 +64,28 @@ namespace EJ.Domain.Services
             var sha1data = sha1.ComputeHash(newPassword);
             return sha1data;
         }
-        public async Task<UserInfoUi> Login(LoginUI model)
+        public async Task<UserInfoViewModel> Login(LoginViewModel model)
         {
             var pwd = GetPasswordBytes(model.Password);
-            var userFromRepository = UserRepository.FindFirst(x =>
-                pwd.SequenceEqual(x.Password) && model.Email == x.Email);
+            var userFromRepository = _eJContext.Users.ToList().FirstOrDefault(x =>
+                pwd.SequenceEqual(x.Password) && model.Email == x.Email);//.ToList()[0];
             if (userFromRepository == null)
             {
-                return new UserInfoUi
+                return new UserInfoViewModel
                 {
                     ErrorMessage = "Неверные логин и (или) пароль"
                 };
             }
             if (userFromRepository.EmailVerified == true)
             {
-                return new UserInfoUi
+                return new UserInfoViewModel
                 {
                     Fio = userFromRepository.Fio,
                     Role = (RolesEnum) userFromRepository.RoleId,
                     Email = userFromRepository.Email
                 };
             }
-            return new UserInfoUi
+            return new UserInfoViewModel
             {
                 ErrorMessage = "Адрес электронной почты не подтверждён, пожалуйста, проверьте Ваш почтовый ящик."
             };
@@ -112,12 +93,12 @@ namespace EJ.Domain.Services
 
         public async Task<bool> Exists(string model)
         {
-            return await UserRepository.FindFirstAsync(x => model == x.Email) == null;
+            return _eJContext.Users.Where(x => model == x.Email).Any();
         }
 
-        public async Task<UserInfoUi> Register(RegisterUI model)
+        public async Task<UserInfoViewModel> Register(RegisterViewModel model)
         {
-            var userFromRepository = await UserRepository.AddAsync(new User()
+            var userFromRepository = _eJContext.Users.Add(new User()
             {
                 Email = model.Email,
                 Password = GetPasswordBytes(model.Password),
@@ -137,77 +118,81 @@ namespace EJ.Domain.Services
                 return null;
             }
 
-            var code = await AuthorizationService.GenerateEmailConfirmationTokenAsync(userFromRepository);
-
-            return new UserInfoUi
+            var code = await AuthorizationService.GenerateEmailConfirmationTokenAsync(userFromRepository.Entity);
+            _eJContext.SaveChanges();
+            return new UserInfoViewModel
             {
-                Fio = userFromRepository.Fio,
-                Role = (RolesEnum) userFromRepository.RoleId,
-                Email = userFromRepository.Email,
-                Id = userFromRepository.Id,
+                Fio = userFromRepository.Entity.Fio,
+                Role = (RolesEnum) userFromRepository.Entity.RoleId,
+                Email = userFromRepository.Entity.Email,
+                Id = userFromRepository.Entity.Id,
                 Code = code
             };
         }
 
         //public RolesEnum CurrentUserRole { get; }
         public string CurrentUserFio { get; }
-        public UserInfoUi GetUserBasicInfo(int userId)
+        public UserInfoViewModel GetUserBasicInfo(int userId)
         {
             throw new System.NotImplementedException();
         }
 
         public Group GetCurrentUserGroup()
         {
-            return UserRepository.FindFirst(x => x.Id == CurrentUserId).Group;
+            return _eJContext.Users.FirstOrDefault(x => x.Id == CurrentUserId)?.Group;
         }
         public List<User> GetCurrentUserAllGroup()
         {
-            var group = UserRepository.FindFirst(x => x.Id == CurrentUserId).Group;
+            var group = _eJContext.Users.FirstOrDefault(x => x.Id == CurrentUserId)?.Group;
             var users = new List<User>();
-            foreach (var item in _groupRepository.Find(x => x.Number == group.Number && x.CourseId == group.CourseId))
+            var groups = _eJContext.Groups.Where(x => x.Number == group.Number && x.CourseId == group.CourseId).ToList();
+            foreach (var item in groups)
             {
                 users.AddRange(item.Users);
             }
             return users;
         }
 
-        public IEnumerable<UserInfoUi> GetUsers()
+        public IEnumerable<UserInfoViewModel> GetUsers()
         {
-            return (UserRepository.GetAll()
-                .OrderBy(y => y.Fio)
-                .Select(mapUserToUserInfoUi));
+            return _eJContext.Users
+                .OrderBy(nameof(User.SName))
+                //.ThenBy(nameof(User.FName))
+                //.ThenBy(nameof(User.MName))
+                .Select(x => Mapper.Map<UserInfoViewModel>(x));
         }
 
-        public UserInfoUi GetUser(int id)
+        public UserInfoViewModel GetUser(int id)
         {
-            var user = UserRepository.Find(id);
+            var user = _eJContext.Users.Find(id);
             if (user != null)
             {
-                return Mapper.Map<UserInfoUi>(user);
+                return Mapper.Map<UserInfoViewModel>(user);
             }
             else
             {
-                return new UserInfoUi();
+                return new UserInfoViewModel();
             }
         }
 
-        public UserInfoUi AddUser(UserInfoUi user)
+        public UserInfoViewModel AddUser(UserInfoViewModel user)
         {
             return null;
         }
 
         public bool DeleteUser(int id)
         {
-            var user = UserRepository.Find(id);
+            var user = _eJContext.Users.Find(id);
             if (user != null)
             {
-                UserRepository.Remove(user);
-                return (UserRepository.Find(id) == null);
+                _eJContext.Users.Remove(user);
+                _eJContext.SaveChanges();
+                return _eJContext.Users.Find(id) == null;
             }
-            throw new System.Exception("Group not found");
+            throw new Exception("User not found");
         }
 
-        public bool UpdateUser(int id, UserInfoUi user)
+        public bool UpdateUser(int id, UserInfoViewModel user)
         {
             foreach (var role in (RolesEnum[]) Enum.GetValues(typeof(RolesEnum)))
             {
@@ -216,7 +201,6 @@ namespace EJ.Domain.Services
                     user.RoleId = (int) role;
                 }
             }
-            //var userFromRepository = UserRepository.FindFirst(x => x.Id == id);
             var userToRepository = new User
             {
                 FName = user.FName,
@@ -235,9 +219,10 @@ namespace EJ.Domain.Services
                 Password = userFromRepository.Password,
                 EmailVerified = userFromRepository.EmailVerified*/
             };
-            UserRepository.Update(userToRepository, true, x => x.FName, x => x.MName, x => x.SName,
+            _eJContext.Users.Update(userToRepository);/*, true, x => x.FName, x => x.MName, x => x.SName,
             x => x.Email, x => x.BirthDay, x => x.PersonalNumber, x => x.GroupId, x => x.UserStateId,
-            x => x.StartDate, x => x.RemovalDate, x => x.Sex, x => x.RoleId);
+            x => x.StartDate, x => x.RemovalDate, x => x.Sex, x => x.RoleId);*/
+            _eJContext.SaveChanges();
             return true;
         }
     }

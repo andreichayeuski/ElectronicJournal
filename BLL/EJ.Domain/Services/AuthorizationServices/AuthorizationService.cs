@@ -1,4 +1,6 @@
-﻿using EJ.Entities.Models;
+﻿using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
+using EJ.Entities.Models;
 using EJ.Models.Interfaces;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -43,7 +45,8 @@ namespace EJ.Domain.Services.AuthorizationServices
 
     public class AuthorizationService : IAuthorizationService
     {
-        protected readonly IRepository<User> UserRepository;
+        private readonly EJContext _eJContext;
+
         public IdentityErrorDescriber ErrorDescriber { get; set; }
 
         internal static string FormatNoTokenProvider(object p0, object p1)
@@ -74,14 +77,14 @@ namespace EJ.Domain.Services.AuthorizationServices
         private readonly Dictionary<string, Models.Interfaces.IUserTwoFactorTokenProvider<User>> _tokenProviders =
             new Dictionary<string, Models.Interfaces.IUserTwoFactorTokenProvider<User>>();
 
-        public AuthorizationService(IRepository<User> userRepository)
+        public AuthorizationService(IDbContextFactory contextFactory)
         {
             /*Protector = new KeyRingBasedDataProtector(
                 logger: _logger,
                 keyRingProvider: _keyRingProvider,
                 originalPurposes: null,
                 newPurpose: purpose); dataProtectionProvider.CreateProtector("DataProtectorTokenProvider");*/
-            UserRepository = userRepository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
             _tokenProviders[Tokens.EmailConfirmationTokenProvider] = new UserTwoFactorTokenProvider();
         }
 
@@ -108,7 +111,7 @@ namespace EJ.Domain.Services.AuthorizationServices
 
         public virtual async Task<IdentityResult> ConfirmEmailAsync(int userId, string token)
         {
-            var user = UserRepository.Find(userId);
+            var user = _eJContext.Users.Find(userId);
 
             if (await VerifyUserTokenAsync(user, Tokens.EmailConfirmationTokenProvider, ConfirmEmailTokenPurpose,
                 token) == IdentityResult.Failed())
@@ -144,10 +147,10 @@ namespace EJ.Domain.Services.AuthorizationServices
 
         protected virtual async Task<IdentityResult> UpdateUserAsync(User user)
         {
-            var userFromRepository = await UserRepository.FindAsync(user.Id);
+            var userFromRepository = _eJContext.Users.Find(user.Id);
             userFromRepository.EmailVerified = true;
-            await UserRepository.UpdateAsync(userFromRepository);
-            return UserRepository.Find(userFromRepository.Id).EmailVerified ? IdentityResult.Success : IdentityResult.Failed();
+            _eJContext.Users.Update(userFromRepository);
+            return _eJContext.Users.Find(userFromRepository.Id).EmailVerified ? IdentityResult.Success : IdentityResult.Failed();
         }
     }
 }

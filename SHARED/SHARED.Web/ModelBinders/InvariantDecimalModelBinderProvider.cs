@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace SHARED.Web.ModelBinders
 {
@@ -16,7 +18,7 @@ namespace SHARED.Web.ModelBinders
 
             if (!context.Metadata.IsComplexType && (context.Metadata.ModelType == typeof(decimal) || context.Metadata.ModelType == typeof(decimal?)))
             {
-                return new InvariantDecimalModelBinder(context.Metadata.ModelType);
+                return new InvariantDecimalModelBinder(context.Metadata.ModelType, new NullLoggerFactory());
             }
 
             return null;
@@ -28,9 +30,9 @@ namespace SHARED.Web.ModelBinders
         private readonly SimpleTypeModelBinder _baseBinder;
         private readonly Type _type;
 
-        public InvariantDecimalModelBinder(Type modelType)
+        public InvariantDecimalModelBinder(Type modelType, ILoggerFactory loggerFactory)
         {
-            _baseBinder = new SimpleTypeModelBinder(modelType);
+            _baseBinder = new SimpleTypeModelBinder(modelType, loggerFactory);
             _type = modelType;
         }
 

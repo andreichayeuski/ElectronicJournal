@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
+using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
 using EJ.Entities.Models;
 using EJ.Models.Enums;
 using EJ.Models.Interfaces;
@@ -20,32 +22,11 @@ namespace EJ.Domain.Services
     }
     public class ConverterService : IConverterService
     {
-        private readonly IRepository<Auditorium> _auditoriumRepository;
-        private readonly IRepository<TimeSpending> _timeSpendingRepository;
-        private readonly IRepository<Group> _groupRepository;
-        private readonly IRepository<GroupShedule> _groupSheduleRepository;
-        private readonly IRepository<Semester> _semesterRepository;
-        private readonly IRepository<SheduleSubject> _sheduleSubjectRepository;
-        private readonly IRepository<SheduleTimeSpending> _sheduleTimeSpendingRepository;
-        private readonly IRepository<Subject> _subjectRepository;
-        private readonly IRepository<WeekDay> _weekDayRepository;
-        public ConverterService(IRepository<Auditorium> auditoriumRepository,
-            IRepository<TimeSpending> timeSpendingRepository,
-            IRepository<Group> groupRepository, IRepository<GroupShedule> groupSheduleRepository,
-            IRepository<SheduleSubject> sheduleSubjectRepository,
-            IRepository<SheduleTimeSpending> sheduleTimeSpendingRepository,
-            IRepository<Subject> subjectRepository, IRepository<Semester> semesterRepository,
-            IRepository<WeekDay> weekDayRepository)
+        private readonly EJContext _eJContext;
+
+        public ConverterService(IDbContextFactory contextFactory)
         {
-            _auditoriumRepository = auditoriumRepository;
-            _timeSpendingRepository = timeSpendingRepository;
-            _groupRepository = groupRepository;
-            _groupSheduleRepository = groupSheduleRepository;
-            _sheduleSubjectRepository = sheduleSubjectRepository;
-            _sheduleTimeSpendingRepository = sheduleTimeSpendingRepository;
-            _subjectRepository = subjectRepository;
-            _semesterRepository = semesterRepository;
-            _weekDayRepository = weekDayRepository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
         }
 
         private int GetNumberFromRoman(string romanNumber)
@@ -108,23 +89,25 @@ namespace EJ.Domain.Services
                 var semesterInfo = ParseSemesterInfoCell(semesterInfoCellValue);
                 var autumnSemester = semesterInfo[1] == "осенний";
                 var yearSemester = semesterInfo[2].Substring(0, 4);
-                var semester = _semesterRepository.FindFirst(x => x.StartDate.Year.ToString() == yearSemester
+                var semester = _eJContext.Semesters.FirstOrDefault(x => x.StartDate.Year.ToString() == yearSemester
                     && x.StartDate.Month == (autumnSemester ? 9 : 2));
                 if (semester == null)
                 {
-                    semester = _semesterRepository.Add(new Semester
+                    semester = _eJContext.Semesters.Add(new Semester
                     {
                         StartDate = autumnSemester ? DateTime.Parse("01.09." + yearSemester)
                             : DateTime.Parse("01.02." + yearSemester),
                         EndDate = autumnSemester ? DateTime.Parse("25.12." + yearSemester)
                             : DateTime.Parse("10.06." + (int.Parse(yearSemester) + 1))
-                    });
+                    }).Entity;
                 }
                 while (GetStringValueFromCell(excelRow.Cell(1)) != "break")
                 {
                     groups = ParseRow(semester, groups, excelRow);
                     excelRow = excelRow.RowBelow();
                 }
+                _eJContext.SaveChanges();
+
                 return new OkObjectResult(true);
             }
             catch (Exception ex)
@@ -166,12 +149,12 @@ namespace EJ.Domain.Services
                 if (dataFromRow != "")
                 {
                     groups[i] = int.Parse(dataFromRow.Split(' ')[0]);
-                    resultGroups.Add(_groupRepository.FindFirst(x => x.Number == groups[i]
+                    resultGroups.Add(_eJContext.Groups.FirstOrDefault(x => x.Number == groups[i]
                         && !x.HalfGroup));
                 }
                 else
                 {
-                    resultGroups.Add(_groupRepository.FindFirst(x => x.Number == groups[i - 1]
+                    resultGroups.Add(_eJContext.Groups.FirstOrDefault(x => x.Number == groups[i - 1]
                         && x.HalfGroup));
                 }
             }
@@ -186,7 +169,7 @@ namespace EJ.Domain.Services
             {
                 try
                 {
-                    var timeSpending = _timeSpendingRepository.FindFirst(x => x.StartTime.Minutes == int.Parse(timeSplit[1])
+                    var timeSpending = _eJContext.TimeSpendings.FirstOrDefault(x => x.StartTime.Minutes == int.Parse(timeSplit[1])
                         && x.StartTime.Hours == int.Parse(timeSplit[0]));
                     if (timeSpending != null)
                     {
@@ -196,7 +179,7 @@ namespace EJ.Domain.Services
                         {
                             week = row.Cell(2).GetString() != "" ? 1 : 2;
                         }
-                        var weekDaysFromRepository = _weekDayRepository.Find(x => x.Day.ToLower() == day
+                        var weekDaysFromRepository = _eJContext.WeekDays.Where(x => x.Day.ToLower() == day
                             && (week == 0 ? true : x.NumberOfWeek == week));
 
                         for (int i = 3; i < row.LastCellUsed().Address.ColumnNumber - 2; i++)
@@ -211,7 +194,7 @@ namespace EJ.Domain.Services
                                     {
                                         var subject = new Subject();
 
-                                        subject = _subjectRepository.FindFirst(x =>
+                                        subject = _eJContext.Subjects.FirstOrDefault(x =>
                                              x.Name == subjectItem.SubjectName || x.ShortName == subjectItem.SubjectName);
 
                                         if (subject != null)
@@ -219,46 +202,46 @@ namespace EJ.Domain.Services
                                             if (subject.Name == null && subjectItem.ClassType == ClassTypeEnum.лк)
                                             {
                                                 subject.Name = subjectItem.SubjectName;
-                                                subject = _subjectRepository.Update(subject);
+                                                subject = _eJContext.Subjects.Update(subject).Entity;
                                             }
                                             if (subject.ShortName == null && subjectItem.ClassType != ClassTypeEnum.лк)
                                             {
                                                 subject.ShortName = subjectItem.SubjectName;
-                                                subject = _subjectRepository.Update(subject);
+                                                subject = _eJContext.Subjects.Update(subject).Entity;
                                             }
                                         }
                                         else
                                         {
-                                            subject = _subjectRepository.Add(new Subject
+                                            subject = _eJContext.Subjects.Add(new Subject
                                             {
                                                 Name = subjectItem.ClassType == ClassTypeEnum.лк
                                                             ? subjectItem.SubjectName : null,
                                                 ShortName = subjectItem.ClassType == ClassTypeEnum.лк
                                                             ? null : subjectItem.SubjectName
-                                            });
+                                            }).Entity;
                                         }
-                                        var groupShedule = _groupSheduleRepository.FindFirst(x => x.GroupId == groups[i - 3].Id)
-                                            ?? _groupSheduleRepository.Add(new GroupShedule
+                                        var groupShedule = _eJContext.GroupShedules.FirstOrDefault(x => x.GroupId == groups[i - 3].Id)
+                                            ?? _eJContext.GroupShedules.Add(new GroupShedule
                                             {
                                                 GroupId = groups[i - 3].Id,
                                                 SemesterId = semester.Id
-                                            });
-                                        var sheduleSubject = _sheduleSubjectRepository.FindFirst(x => x.SubjectId == subject.Id
+                                            }).Entity;
+                                        var sheduleSubject = _eJContext.SheduleSubjects.FirstOrDefault(x => x.SubjectId == subject.Id
                                             && x.GroupSheduleId == groupShedule.Id)
-                                            ?? _sheduleSubjectRepository.Add(new SheduleSubject
+                                            ?? _eJContext.SheduleSubjects.Add(new SheduleSubject
                                             {
                                                 SubjectId = subject.Id,
                                                 GroupSheduleId = groupShedule.Id
-                                            });
-                                        var auditorium = _auditoriumRepository.FindFirst(x => x.Number == subjectItem.AuditoruimNumber)
-                                            ?? _auditoriumRepository.Add(new Auditorium
+                                            }).Entity;
+                                        var auditorium = _eJContext.Auditoriums.FirstOrDefault(x => x.Number == subjectItem.AuditoruimNumber)
+                                            ?? _eJContext.Auditoriums.Add(new Auditorium
                                             {
                                                 Number = subjectItem.AuditoruimNumber
-                                            });
+                                            }).Entity;
 
 
                                         var sheduleTimeSpending = new List<SheduleTimeSpending>();
-                                        sheduleTimeSpending.AddRange(_sheduleTimeSpendingRepository.Find(x =>
+                                        sheduleTimeSpending.AddRange(_eJContext.SheduleTimeSpendings.Where(x =>
                                             x.ClassTypeId == (int) subjectItem.ClassType
                                             && x.AuditoriumId == auditorium.Id
                                             && x.SheduleSubjectId == sheduleSubject.Id
@@ -269,14 +252,14 @@ namespace EJ.Domain.Services
                                         {
                                             foreach (var weekDay in weekDaysFromRepository)
                                             {
-                                                sheduleTimeSpending.Add(_sheduleTimeSpendingRepository.Add(new SheduleTimeSpending
+                                                sheduleTimeSpending.Add(_eJContext.SheduleTimeSpendings.Add(new SheduleTimeSpending
                                                 {
                                                     ClassTypeId = (int) subjectItem.ClassType,
                                                     AuditoriumId = auditorium.Id,
                                                     SheduleSubjectId = sheduleSubject.Id,
                                                     TimeSpendingId = timeSpending.Id,
                                                     WeekDayId = weekDay.Id
-                                                }));
+                                                }).Entity);
                                             }
                                         }
                                     }

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using AutoMapper;
+using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
 using EJ.Entities.Models;
 using EJ.Models.Interfaces;
 using EJ.Models.UI;
@@ -8,24 +10,25 @@ namespace EJ.Domain.Services
 {
     public interface ICourseService
     {
-        IEnumerable<CourseUi> GetCourses();
-        CourseUi GetCourse(int id);
-        CourseUi AddCourse(CourseUi course);
+        IEnumerable<CourseViewModel> GetCourses();
+        CourseViewModel GetCourse(int id);
+        CourseViewModel AddCourse(CourseViewModel course);
         bool DeleteCourse(int id);
-        CourseUi UpdateCourse(int id, CourseUi course);
+        CourseViewModel UpdateCourse(int id, CourseViewModel course);
     }
     public class CourseService : ICourseService
     {
         protected readonly IMapper Mapper;
-        protected readonly IRepository<Course> CourseRepository;
+        private readonly EJContext _eJContext;
 
-        public CourseService(IMapper mapper, IRepository<Course> repository)
+        public CourseService(IMapper mapper,
+             IDbContextFactory contextFactory)
         {
             Mapper = mapper;
-            CourseRepository = repository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
         }
 
-        public CourseUi AddCourse(CourseUi course)
+        public CourseViewModel AddCourse(CourseViewModel course)
         {
             var courseToRepository = new Course
             {
@@ -33,39 +36,42 @@ namespace EJ.Domain.Services
                 EndDate = course.EndDate,
                 StartDate = course.StartDate
             };
-            return Mapper.Map<CourseUi>(CourseRepository.Add(courseToRepository));
+            var courseAdded = Mapper.Map<CourseViewModel>(_eJContext.Courses.Add(courseToRepository));
+            _eJContext.SaveChanges();
+            return courseAdded;
         }
 
         public bool DeleteCourse(int id)
         {
-            var course = CourseRepository.Find(id);
+            var course = _eJContext.Courses.Find(id);
             if (course != null)
             {
-                CourseRepository.Remove(course);
-                return (CourseRepository.Find(id) == null);
+                _eJContext.Courses.Remove(course);
+                _eJContext.SaveChanges();
+                return _eJContext.Courses.Find(id) == null;
             }
             throw new System.Exception("Course not found");
         }
 
-        public CourseUi GetCourse(int id)
+        public CourseViewModel GetCourse(int id)
         {
-            var course = CourseRepository.Find(id);
+            var course = _eJContext.Courses.Find(id);
             if (course != null) 
             {
-                return Mapper.Map<CourseUi>(course);
+                return Mapper.Map<CourseViewModel>(course);
             }
             else
             {
-                return new CourseUi();
+                return new CourseViewModel();
             }
         }
 
-        public IEnumerable<CourseUi> GetCourses()
+        public IEnumerable<CourseViewModel> GetCourses()
         {
-            return Mapper.Map<IEnumerable<CourseUi>>(CourseRepository.GetAll());
+            return Mapper.Map<IEnumerable<CourseViewModel>>(_eJContext.Courses);
         }
 
-        public CourseUi UpdateCourse(int id, CourseUi course)
+        public CourseViewModel UpdateCourse(int id, CourseViewModel course)
         {
             var courseToRepository = new Course
             {
@@ -74,7 +80,9 @@ namespace EJ.Domain.Services
                 StartDate = course.StartDate,
                 Id = id
             };
-            return Mapper.Map<CourseUi>(CourseRepository.Update(courseToRepository));
+            var courseUpdated = Mapper.Map<CourseViewModel>(_eJContext.Courses.Update(courseToRepository));
+            _eJContext.SaveChanges();
+            return courseUpdated;
         }
     }
 }

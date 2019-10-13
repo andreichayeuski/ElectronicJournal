@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <Company>BSTU</Company>
     <Authors>BSTU</Authors>
     <PackageId>SHARED.Models</PackageId>
@@ -9,5 +9,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Trirand.Web.Core\Trirand.Web.Core.csproj" />
   </ItemGroup>
-    
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
  </Project>

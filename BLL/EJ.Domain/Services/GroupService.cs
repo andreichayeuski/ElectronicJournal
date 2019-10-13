@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
+using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
 using EJ.Entities.Models;
 using EJ.Models.Interfaces;
 using EJ.Models.UI;
@@ -9,24 +11,25 @@ namespace EJ.Domain.Services
 {
     public interface IGroupService
     {
-        IEnumerable<GroupUi> GetGroups();
-        GroupUi GetGroup(int id);
-        GroupUi AddGroup(GroupUi group);
+        IEnumerable<GroupViewModel> GetGroups();
+        GroupViewModel GetGroup(int id);
+        GroupViewModel AddGroup(GroupViewModel group);
         bool DeleteGroup(int id);
-        GroupUi UpdateGroup(int id, GroupUi group);
+        GroupViewModel UpdateGroup(int id, GroupViewModel group);
     }
     public class GroupService : IGroupService
     {
         protected readonly IMapper Mapper;
-        protected readonly IRepository<Group> GroupRepository;
+        private readonly EJContext _eJContext;
 
-        public GroupService(IMapper mapper, IRepository<Group> repository)
+        public GroupService(IMapper mapper,
+             IDbContextFactory contextFactory)
         {
             Mapper = mapper;
-            GroupRepository = repository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
         }
 
-        public GroupUi AddGroup(GroupUi group)
+        public GroupViewModel AddGroup(GroupViewModel group)
         {
             var groupToRepository = new Group
             {
@@ -36,26 +39,29 @@ namespace EJ.Domain.Services
                 HalfGroup = group.HalfGroup,
                 CourseId = group.CourseId
             };
-            return Mapper.Map<GroupUi>(GroupRepository.Add(groupToRepository));
+            var groupAdded = Mapper.Map<GroupViewModel>(_eJContext.Groups.Add(groupToRepository));
+            _eJContext.SaveChanges();
+            return groupAdded;
         }
 
         public bool DeleteGroup(int id)
         {
-            var group = GroupRepository.Find(id);
+            var group = _eJContext.Groups.Find(id);
             if (group != null)
             {
-                GroupRepository.Remove(group);
-                return (GroupRepository.Find(id) == null);
+                _eJContext.Groups.Remove(group);
+                _eJContext.SaveChanges();
+                return _eJContext.Groups.Find(id) == null;
             }
             throw new System.Exception("Group not found");
         }
 
-        public GroupUi GetGroup(int id)
+        public GroupViewModel GetGroup(int id)
         {
-            var groupFromRepository = GroupRepository.Find(id);
+            var groupFromRepository = _eJContext.Groups.Find(id);
             if (groupFromRepository != null)
             {
-                return new GroupUi
+                return new GroupViewModel
                 {
                     CourseId = groupFromRepository.CourseId ?? 0,
                     StartDate = groupFromRepository.StartDate,
@@ -67,17 +73,17 @@ namespace EJ.Domain.Services
             }
             else
             {
-                return new GroupUi();
+                return new GroupViewModel();
             }
         }
 
-        public IEnumerable<GroupUi> GetGroups()
+        public IEnumerable<GroupViewModel> GetGroups()
         {
-            return Mapper.Map<IEnumerable<GroupUi>>(GroupRepository.GetAllReadOnly()
+            return Mapper.Map<IEnumerable<GroupViewModel>>(_eJContext.Groups
                 .OrderBy(x => x.Number).ThenBy(y => y.HalfGroup));
         }
 
-        public GroupUi UpdateGroup(int id, GroupUi group)
+        public GroupViewModel UpdateGroup(int id, GroupViewModel group)
         {
             var groupToRepository = new Group
             {
@@ -88,7 +94,9 @@ namespace EJ.Domain.Services
                 CourseId = group.CourseId,
                 Id = id
             };
-            return Mapper.Map<GroupUi>(GroupRepository.Update(groupToRepository));
+            var groupUpdated = Mapper.Map<GroupViewModel>(_eJContext.Groups.Update(groupToRepository));
+            _eJContext.SaveChanges();
+            return groupUpdated;
         }
     }
 }

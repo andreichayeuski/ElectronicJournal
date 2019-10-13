@@ -1,5 +1,4 @@
 ﻿using EJ.Entities.Models;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 

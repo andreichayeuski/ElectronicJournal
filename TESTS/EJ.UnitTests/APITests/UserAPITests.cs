@@ -31,9 +31,9 @@ namespace EJ.UnitTests.APITests
                 HalfGroup = false,
                 CourseId = 1
             };*/
-            /* mock.Setup(a => a.AddGroup(group)).Returns<GroupUi>(group => group);
-             mock.Setup(a => a.GetGroup()).Returns<GroupUi>(group => group);
-             mock.Setup(a => a.AddGroup(group)).Returns<GroupUi>(group => group);*/
+            /* mock.Setup(a => a.AddGroup(group)).Returns<GroupViewModel>(group => group);
+             mock.Setup(a => a.GetGroup()).Returns<GroupViewModel>(group => group);
+             mock.Setup(a => a.AddGroup(group)).Returns<GroupViewModel>(group => group);*/
             var controller = new UserController(UserService);
 
             var result = controller.Get() as JsonResult;
@@ -42,20 +42,20 @@ namespace EJ.UnitTests.APITests
             /*result = controller.Post(group) as JsonResult;
             Assert.IsNotNull(result);
             */
-            /*var groupForUpdate = new GroupUi  {
+            /*var groupForUpdate = new GroupViewModel  {
                 Number = 20,
                 EndDate = DateTime.Now,
                 StartDate = DateTime.Now,
                 HalfGroup = true,
                 CourseId = 2
             };
-            result = controller.Put(((GroupUi) result.Value).Id, groupForUpdate) as JsonResult;
+            result = controller.Put(((GroupViewModel) result.Value).Id, groupForUpdate) as JsonResult;
             Assert.IsNotNull(result);
 
-            result = controller.Get(((GroupUi) result.Value).Id) as JsonResult;
+            result = controller.Get(((GroupViewModel) result.Value).Id) as JsonResult;
             Assert.IsNotNull(result);
 
-            result = controller.Delete(((GroupUi) result.Value).Id) as JsonResult;
+            result = controller.Delete(((GroupViewModel) result.Value).Id) as JsonResult;
             Assert.IsNotNull(result);*/
         }
     }

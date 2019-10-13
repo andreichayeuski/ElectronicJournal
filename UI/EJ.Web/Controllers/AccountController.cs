@@ -45,7 +45,7 @@ namespace EJ.Web.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterUI model)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -87,12 +87,12 @@ namespace EJ.Web.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginUI model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             _userService.ClearCurrentUserCache();
             if (ModelState.IsValid)
             {
-                UserInfoUi userInfoUi = await _userService.Login(model);
+                UserInfoViewModel userInfoUi = await _userService.Login(model);
                 if (userInfoUi.ErrorMessage == null)
                 {
                     await Authenticate(userInfoUi); // аутентификация
@@ -103,7 +103,7 @@ namespace EJ.Web.Controllers
             }
             return View(model);
         }
-        private async Task Authenticate(UserInfoUi userInfoUi)
+        private async Task Authenticate(UserInfoViewModel userInfoUi)
         {
             // создаем один claim
             var claims = new List<Claim>

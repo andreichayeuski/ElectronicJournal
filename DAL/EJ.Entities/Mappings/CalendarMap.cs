@@ -8,6 +8,8 @@ namespace EJ.Entities.Mappings
     {
         public void Configure(EntityTypeBuilder<Calendar> builder) 
         {
+            builder.ToTable("Calendar");
+
             builder.HasMany(d => d.CalendarSheduleTimeSpendings)
                 .WithOne(p => p.Calendar)
                 .HasForeignKey(d => d.CalendarId);

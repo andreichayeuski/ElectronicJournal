@@ -11,6 +11,8 @@ namespace EJ.Entities.Mappings
     {
         public void Configure(EntityTypeBuilder<AbsenceNotification> builder)
         {
+            builder.ToTable("AbsenceNotification");
+
             builder.HasOne(p => p.Absence)
                 .WithOne(d => d.AbsenceNotification)
                 .HasForeignKey<Absence>(p => p.AbsenceNotificationId);

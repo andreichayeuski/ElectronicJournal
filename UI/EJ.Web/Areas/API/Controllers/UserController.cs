@@ -34,14 +34,14 @@ namespace EJ.Web.Areas.API.Controllers
 
         // POST: api/User
         [HttpPost]
-        public JsonResult Post([FromBody] UserInfoUi value)
+        public JsonResult Post([FromBody] UserInfoViewModel value)
         {
             return Json(_userService.AddUser(value));
         }
 
         // PUT: api/User/5
         [HttpPut("{id}")]
-        public JsonResult Put(int id, [FromBody] UserInfoUi value)
+        public JsonResult Put(int id, [FromBody] UserInfoViewModel value)
         {
             return Json(_userService.UpdateUser(id, value));
         }

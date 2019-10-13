@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Security.Claims;
 using AutoMapper;
+using EJ.Domain.Services.DbContextScopeFactory;
+using EJ.Entities;
 using EJ.Entities.Models;
 using EJ.Models.Enums;
 using EJ.Models.Interfaces;
@@ -42,7 +44,7 @@ namespace EJ.Domain.Services
         /// </summary>
         /// <param name="userId">идентификатор пользователя</param>
         /// <returns>Роль и таски</returns>
-        UserInfoUi GetUserBasicInfo(int userId);
+        UserInfoViewModel GetUserBasicInfo(int userId);
         void ClearCache();
         void ClearCurrentUserCache();
     }
@@ -50,18 +52,18 @@ namespace EJ.Domain.Services
     public class BaseUserService : IBaseUserService
     {
         protected readonly IServiceCache Cache;
-        protected readonly IRepository<User> UserRepository;
         protected readonly IMapper Mapper;
         protected readonly IHttpContextAccessor HttpContextAccessor;
+        private readonly EJContext _eJContext;
 
         public BaseUserService(
             IServiceCache cache,
-            IRepository<Entities.Models.User> userRepository,
+            IDbContextFactory contextFactory,
             IMapper mapper,
             IHttpContextAccessor httpContextAccessor)
         {
             Cache = cache;
-            UserRepository = userRepository;
+            _eJContext = contextFactory.CreateReadonlyDbContext<EJContext>();
             Mapper = mapper;
             HttpContextAccessor = httpContextAccessor;
         }
@@ -84,23 +86,22 @@ namespace EJ.Domain.Services
         public int CurrentUserId => Cache.GetOrAdd($"CurrentUserId_{CurrentUserLogin}",
             () =>
             {
-                var user = UserRepository.FindFirst(c => c.Email.ToLower().StartsWith(CurrentUserLogin.ToLower()));
-                return user?.Id ?? 0;
-            });
+                return _eJContext.Users.FirstOrDefault(c => c.Email.ToLower().StartsWith(CurrentUserLogin.ToLower()))?.Id ?? 0;
+            }); 
 
         public RolesEnum CurrentUserRole => GetUserBasicInfo(CurrentUserId).Role;
 
         public string CurrentUserFio => GetUserBasicInfo(CurrentUserId).Fio;
 
-        public virtual UserInfoUi GetUserBasicInfo(int userId)
+        public virtual UserInfoViewModel GetUserBasicInfo(int userId)
         {
             return Cache.GetOrAdd($"UserBasicInfo_{userId}", () =>
             {
-                var dbUser = UserRepository.Find(userId);
+                var dbUser = _eJContext.Users.Find(userId);
 
                 if (dbUser != null)
                 {
-                    return new UserInfoUi
+                    return new UserInfoViewModel
                     {
                         Email = dbUser.Email,
                         Fio = dbUser.Fio,
@@ -109,7 +110,7 @@ namespace EJ.Domain.Services
                     };
                 }
                 
-                return new UserInfoUi
+                return new UserInfoViewModel
                 {
                     Code = "",
                     Email = "",
